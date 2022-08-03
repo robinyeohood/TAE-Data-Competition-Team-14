@@ -3,10 +3,125 @@ title: "K-means Clustering"
 output: html_notebook
 ---
 
+# Iteration 1
+
 1. Prepare the data
 
 ```{r}
-
+source("prepare_data.R")
+tweets <- prepare_data("train.csv", "tweet", "sentiment", 0.001)
 ```
 
+2. Split the data.
 
+```{r}
+set.seed(1)
+library(caTools)
+spl <- sample.split(tweets$sentiment, 0.75)
+train <- subset(tweets, spl == TRUE)
+test <- subset(tweets, spl == FALSE)
+```
+
+3. Train the k-means model on `test` data set.
+
+```{r}
+library(fdm2id)
+kmeans_model <- KMEANS (
+  d = train[, -(ncol(train))],
+  k = 3,
+)
+```
+
+4. See summary of sentiments.
+
+```{r}
+table(kmeans_model$cluster)
+table(train$sentiment)
+```
+
+There's a chance that:
+
+* Cluster 3 is neutral (2)  
+* Cluster 1 is positive (3)  
+* Cluster 2 is negative (1)  
+
+Not looking too good but let's try running some predictions.
+
+5. Predict.
+
+```{r}
+predicted <- predict(kmeans_model, test[, -ncol(test)])
+```
+
+6. Check test accuracy.
+
+```{r}
+predicted_table <- table(predicted, test$sentiment)
+test_accuracy <- (predicted_table[3, 2] + predicted_table[1, 3] + predicted_table[2, 1]) / sum(predicted_table)
+test_accuracy
+```
+
+### Conclusion of Iteration 1
+
+Might not be great idea to have so many terms in the DTM because the weight of each word decreases with the number of words used to help do the clustering. **Try increasing the sparsity index and rerun the model.**
+
+# Iteration 2
+
+1. Prepare the data.  
+
+```{r}
+tweets2 <- prepare_data("train.csv", "tweet", "sentiment", 0.05)
+str(tweets2)
+```
+
+2. Split the data.
+
+```{r}
+set.seed(1)
+train2 <- subset(tweets2, spl == TRUE)
+test2 <- subset(tweets2, spl == FALSE)
+```
+
+3. Train the k-means model on `test` data set.
+
+```{r}
+library(fdm2id)
+kmeans_model2 <- KMEANS (
+  d = train2[, -(ncol(train2))],
+  k = 3,
+)
+```
+
+4. See summary of sentiments.
+
+```{r}
+table(kmeans_model2$cluster)
+table(train2$sentiment)
+```
+
+There's a chance that:
+
+* Cluster 1 is neutral (2)  
+* Cluster 2 is negative (1)  
+* Cluster 3 is positive (3)  
+
+Not looking too good but let's try running some predictions.
+
+5. Predict.
+
+```{r}
+predicted2 <- predict(kmeans_model2, test2[, -ncol(test2)])
+```
+
+6. Check test accuracy.
+
+```{r}
+predicted_table2 <- table(predicted2, test2$sentiment)
+predicted_table2
+test_accuracy2 <- (predicted_table2[1, 2] + predicted_table2[2, 1] + predicted_table2[3, 3]) / sum(predicted_table2)
+test_accuracy2
+```
+
+### Conclusion of Iteration 2
+
+K-MEANS CLUSTERING SUCKS ASS IT DOESN'T WORK FOR SENTIMENT ANALYSIS T_T
