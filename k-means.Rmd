@@ -1,0 +1,12 @@
+---
+title: "K-means Clustering"
+output: html_notebook
+---
+
+1. Prepare the data
+
+```{r}
+
+```
+
+
