@@ -35,7 +35,12 @@ prepare_data <- function(csv_file, text_column_name, dependent_variable, min_per
   
 }
 
-# testing <- prepare_data('train.csv', 'tweet', 'sentiment', 0.001)
+testing <- prepare_data('train.csv', 'tweet', 'sentiment', 0.001)
+
+# HOW TO USE
+# source("prepare_data.R")
+# tweets <- prepare_data("train.csv", "tweet", "sentiment", 0.001)
+
 
 ########## Debugging ##########
 
