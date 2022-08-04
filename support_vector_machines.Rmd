@@ -1,0 +1,109 @@
+---
+title: "Support Vector Machines"
+output: html_notebook
+---
+
+# Intro to Support Vector Machines (SVMs)
+
+[Intro to SVMs](https://www.datacamp.com/tutorial/support-vector-machines-r)
+
+### Create some sample data
+
+```{r}
+set.seed(10111)
+# Make a matrix x, normally distributed with 20 observations in 2 classes/variables.
+x <- matrix(rnorm(40), 20, 2)
+x
+# Make a y variable which is going to be either -1 or 1, with 10 in each class.
+y <- rep(c(-1, 1), c(10, 10))
+y
+# For y = 1, move the means from 0 to 1 in each of the coordinates.
+x[y == 1, ] <- x[y == 1, ] + 1 # Alternative for loop notation to increase values in rows 11 to 20 by 1.
+x
+plot(x, col = y + 3, pch = 19) # pch = 19 creates big visible dots coded blue or red according to whether the response is 1 or -1.
+```
+
+### Creating the model
+
+```{r}
+# Load the package `e1071` which contains the `svm` function.
+library(e1071)
+# Turn the data into a data frame and make `y` a factor variable.
+dat <- data.frame(x, y = as.factor(y))
+dat
+# Train the model on the data
+svmfit <- svm(y ~ ., data = dat, kernel = 'linear', cost = 10, scale = F)
+print(svmfit)
+```
+
+"No. of support vectors: 6" are the points that are close tot he boundary or on the wrong side of the boundary.
+
+```{r}
+# Plot of SVM that shows the decision boundary.
+plot(svmfit, dat)
+```
+
+### Make your own plot + Make predictions
+
+The first thing to do is to create a grid of values or a lattice of values for x1 and x2 that covers the whole domain on a fairly fine lattice. To do so, create a function called `make.grid()`. It takes in your data matrix, as well as an argument n which is the number of points in each direction. Here you're going to ask for a 75 x 75 grid.
+
+```{r}
+make.grid <- function(data_matrix, size = 75) {
+  # Get the range of each of the variables in the data_matrix
+  grid_range = apply(data_matrix, 2, range)
+  # print(grid_range)
+  # Use the seq function to go from the lowest to the upper value to make a grid of length = size
+  x1 = seq(from = grid_range[1, 1], to = grid_range[2, 1], length = size)
+  x2 = seq(from = grid_range[1, 2], to = grid_range[2, 2], length = size)
+  # Make the lattice using expand.grid()
+  expand.grid(X1 = x1, X2 = x2)
+}
+```
+
+Apply `make.grid()` on x and see the first few values of the lattice from 1 to 10.
+
+```{r}
+xgrid <- make.grid(x)
+xgrid[1:10, ]
+```
+
+As you can see, the grid goes through the 1st coordinate first, holding the 2nd coordinate fixed.
+
+Having made the lattice, make a prediction at each point in the lattice.
+
+```{r}
+# Use predict() and name the response 'ygrid'.
+ygrid <- predict(svmfit, xgrid)
+ygrid
+# Plot and colour code the points according to the classification so that the decision boundary is clear.
+plot(xgrid, col = c("red", "blue")[as.numeric(ygrid)], pch = 20, cex = 0.2)
+# Put the original points on the plot.
+points(x, col = y + 3, pch = 19)
+# scmfit$index tells which are the support points. You can include them in the plot.
+points(x[svmfit$index, ], pch = 5, cex = 2)
+```
+
+Extract the linear coefficients for the decision boundary.
+
+```{r}
+beta <- drop(t(svmfit$coefs) %*% x[svmfit$index, ])
+beta0 <- svmfit$rho
+```
+
+With these coefficients, you can draw the decision boundary using the equation of the form:
+
+$$\beta_0 + \beta_1 + x1 + \beta_2 * x2 = 0$$
+
+From this equation, figure out a slop and an intercept for the decision boundary. Use the function `abline` with those 2 arguments. The subsequent 2 `abline` functions represent the upper and lower margins of the decision boundary, respectively.
+
+```{r}
+# Same as previously
+plot(xgrid, col = c("red", "blue")[as.numeric(ygrid)], pch = 20, cex = .2)
+points(x, col = y + 3, pch = 19)
+points(x[svmfit$index,], pch = 5, cex = 2)
+# Add the decision boundary
+abline(beta0 / beta[2], -beta[1] / beta[2])
+abline((beta0 - 1) / beta[2], -beta[1] / beta[2], lty = 2)
+abline((beta0 + 1) / beta[2], -beta[1] / beta[2], lty = 2)
+```
+
