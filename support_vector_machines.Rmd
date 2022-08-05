@@ -187,3 +187,23 @@ contour(px1, px2, matrix(func, 69, 99), level = 0.5, add = T, col = "blue", lwd 
 ```
 
 As a result, the non-linear SVM has got pretty close to the Bayes Decision Boundary.
+
+# Applying the SVM model to our data
+
+### Load the Data
+
+```{r}
+source("prepare_data.R")
+tweets <- prepare_data("train.csv", "tweet", "sentiment", 0.005)
+str(tweets)
+```
+
+### Train the Model
+
+```{r}
+# dat <- data.frame(y = factor(y), x)
+# str(dat)
+# nonlinear_svm <- svm(factor(y) ~ ., data = dat, scale = F, kernel = 'radial', cost = 5)
+```
+
+
