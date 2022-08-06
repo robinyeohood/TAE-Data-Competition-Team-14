@@ -1,0 +1,314 @@
+---
+title: "Testing Smaller-Scale SVM Models (while my Mac runs the super big one HAHAHA)"
+output: html_notebook
+---
+
+Copied `svm2.Rmd` to train a smaller subset of predictors to see whether the model works.
+
+[Support Vector Machine in R](https://www.edureka.co/blog/support-vector-machine-in-r/)
+
+### Load the Data
+
+```{r}
+source("prepare_data.R")
+```
+
+```{r}
+tweets <- prepare_data("train.csv", "tweet", "sentiment", 0.05)
+```
+
+### Split the Data
+
+```{r}
+set.seed(1)
+library(caTools)
+spl <- sample.split(tweets$sentiment, 0.5)
+train <- subset(tweets, spl == TRUE)
+test <- subset(tweets, spl == FALSE)
+
+anyNA(tweets) # check for NA entries which might have to be omitted
+```
+
+## Model 1
+
+### Training Model 1
+
+Before we train our model, we’ll first implement the `trainControl()` method. This will control all the computational overheads so that we can use the `train()` function provided by the `caret` package. The training method will train our data on different algorithms.
+
+```{r}
+library(caret)
+set.seed(1)
+svm_Linear_1 <- train(sentiment ~ .,
+                     data = train,
+                     method = "svmLinear")
+svm_Linear_1
+
+# trctrl <- trainControl(method = "repeatedcv", # 'method' defines the resampling method. "repeatedcv": repeated cross-validation
+#                        number = 10, # no. of resampling iterations
+#                        repeats = 3 # no. of sets to compute for the method chosen
+#                        )
+# 
+# # This is the full version of the model we want to try out
+# svm_Linear_full <- train(sentiment ~ .,
+#                     data = train,
+#                     method = "svmLinear",
+#                     trControl = trctrl,
+#                     preProcess = c("center", "scale"), # these help center and scale the data. After pre-processing, these convert our training data with mean value appx. 0 and s.d. appx. 1.
+#                     tuneLength = 10 # tuning for the algo
+#                     )
+
+# svm_Linear
+```
+
+Training accuracy: 0.46726
+
+### Testing Model 1
+
+```{r}
+test_pred_1 <- predict(svm_Linear_1, newdata = test) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_1, test$sentiment))
+```
+
+Test accuracy: 0.4731
+
+## Model 2
+
+### Training Model 2
+
+Change from Model 1: Include `preProcess = c("center", "scale")` in `train()`.
+
+```{r}
+set.seed(1)
+svm_Linear_2 <- train(sentiment ~ .,
+                     data = train,
+                     method = "svmLinear",
+                     preProcess = c("center", "scale"))
+svm_Linear_2
+```
+
+Training Accuracy: 0.46833 - slight improvement
+
+### Testing Model 2
+
+```{r}
+test_pred_2 <- predict(svm_Linear_2, newdata = test) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_2, test$sentiment))
+```
+
+Test Accuracy: 0.4731 - no change
+
+## Model 3
+
+### Training Model 3
+
+Change from Model 1: Added `tuneLength = 10` to `train()`.
+
+```{r}
+set.seed(1)
+svm_Linear_3 <- train(sentiment ~ .,
+                     data = train,
+                     method = "svmLinear",
+                     preProcess = c("center", "scale"),
+                     tuneLength = 10)
+svm_Linear_3
+```
+
+Training Accuracy: 0.46733 - slight worsening
+
+### Testing Model 3
+
+```{r}
+test_pred_3 <- predict(svm_Linear_3, newdata = test) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_3, test$sentiment))
+```
+
+Test Accuracy: 0.4731 - no change WHAT
+
+So maybe the `tuneLength` parameter has no significant effect.
+
+## Model 4
+
+Now, we run Model 2 BUT with more predictors.
+
+### Re-prepare the data
+
+```{r}
+tweets2 <- prepare_data("train.csv", "tweet", "sentiment", 0.03)
+set.seed(1)
+library(caTools)
+spl <- sample.split(tweets2$sentiment, 0.5)
+train2 <- subset(tweets2, spl == TRUE)
+test2 <- subset(tweets2, spl == FALSE)
+```
+
+Now, there are 27 predictors.
+
+### Training Model 4
+
+```{r}
+set.seed(1)
+svm_Linear_4 <- train(sentiment ~ .,
+                     data = train2,
+                     method = "svmLinear",
+                     preProcess = c("center", "scale"))
+svm_Linear_4
+```
+
+Training Accuracy: 0.52895 - IMPROVEMENT
+
+### Testing Model 4
+
+```{r}
+test_pred_4 <- predict(svm_Linear_4, newdata = test2) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_4, test2$sentiment))
+```
+
+Test Accuracy: 0.5317 - IMPROVEMENT
+
+## Model 5
+
+We want to test the effect of k-fold cross-validation on test accuracy. We shall add `trctrl` now set to lower resampling iterations and repeats to keep computational time low for now.
+
+Modify Model 4.
+
+### Training Model 5
+
+```{r}
+trctrl1 <- trainControl(method = "repeatedcv", # 'method' defines the resampling method. "repeatedcv": repeated cross-validation
+                        number = 3, # no. of resampling iterations
+                        repeats = 2 # no. of sets to compute for the method chosen
+                        )
+
+set.seed(1)
+svm_Linear_5 <- train(sentiment ~ .,
+                     data = train2,
+                     method = "svmLinear",
+                     trControl = trctrl1,
+                     preProcess = c("center", "scale"))
+svm_Linear_5
+```
+
+The model trained surprisingly fast.
+
+### Testing Model 5
+
+```{r}
+test_pred_5 <- predict(svm_Linear_5, newdata = test2) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_5, test2$sentiment))
+```
+
+Test Accuracy: 0.5317 - NO CHANGE.
+
+## Model 6
+
+Let's bump up the `trctrl`.
+
+### Training Model 6
+
+```{r}
+trctrl6 <- trainControl(method = "repeatedcv", # 'method' defines the resampling method. "repeatedcv": repeated cross-validation
+                        number = 10, # no. of resampling iterations
+                        repeats = 3 # no. of sets to compute for the method chosen
+                        )
+
+set.seed(1)
+svm_Linear_6 <- train(sentiment ~ .,
+                     data = train2,
+                     method = "svmLinear",
+                     trControl = trctrl6,
+                     preProcess = c("center", "scale"))
+svm_Linear_6
+```
+
+Training Accuracy: 0.52948 - no change
+
+### Testing Model 6
+
+```{r}
+test_pred_6 <- predict(svm_Linear_6, newdata = test2) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_6, test2$sentiment))
+```
+
+Testing Accuracy: 0.5317
+
+Conclusion: k-fold cross-validation here as little effect on accuracy.
+
+## Model 7
+
+Do not do k-fold cross-validation. Increase the no. of predictors. Change split from 50/50 to 60/40
+
+### Reprepare the data
+
+```{r}
+tweets3 <- prepare_data("train.csv", "tweet", "sentiment", 0.01)
+set.seed(1)
+library(caTools)
+spl <- sample.split(tweets3$sentiment, 0.6)
+train3 <- subset(tweets3, spl == TRUE)
+test3 <- subset(tweets3, spl == FALSE)
+```
+
+### Training Model 7
+
+```{r}
+set.seed(1)
+svm_Linear_7 <- train(sentiment ~ .,
+                     data = train3,
+                     method = "svmLinear",
+                     preProcess = c("center", "scale"))
+svm_Linear_7
+```
+
+Training Accuracy: 0.61147
+
+```{r}
+# SAVE THE MODEL
+saveRDS(svm_Linear_7, file = "svm_Linear_103_pred.rds")
+saveRDS(svm_Linear_7, file = "svm_Linear_103_pred.rda")
+```
+
+
+### Testing Model 7
+
+```{r}
+test_pred_7 <- predict(svm_Linear_7, newdata = test3) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_7, test3$sentiment))
+```
+
+Testing Accuracy:
+
+## Model ULTIMATE
+
+### Training Model ULTIMATE
+
+Uncomment the below when you're ready for the MOTHERLOAD.
+
+```{r}
+# trctrl <- trainControl(method = "repeatedcv", # 'method' defines the resampling method. "repeatedcv": repeated cross-validation
+#                         number = 10, # no. of resampling iterations
+#                         repeats = 3 # no. of sets to compute for the method chosen
+#                         )
+# 
+# # Test a few C values to see what's optimal
+# grid <- expand.grid(C = c(0,0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2,5))
+# 
+# # This is the full version of the model we want to try out
+# svm_Linear_full <- train(sentiment ~ .,
+#                      data = train,
+#                      method = "svmLinear",
+#                      trControl = trctrl,
+#                      Grid = grid, # take this out if takes too long
+#                      preProcess = c("center", "scale"), # these help center and scale the data. After pre-processing, these convert our training data with mean value appx. 0 and s.d. appx. 1.
+#                      tuneLength = 10 # tuning for the algo
+#                      )
+# 
+# svm_Linear
+```
+
