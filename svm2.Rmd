@@ -1,0 +1,62 @@
+---
+title: "SVM 2"
+output: html_notebook
+---
+
+[Support Vector Machine in R](https://www.edureka.co/blog/support-vector-machine-in-r/)
+
+### Load the Data
+
+```{r}
+source("prepare_data.R")
+tweets <- prepare_data("train.csv", "tweet", "sentiment", 0.005)
+```
+
+### Split the Data
+
+```{r}
+set.seed(1)
+library(caTools)
+spl <- sample.split(tweets$sentiment, 0.7)
+train <- subset(tweets, spl == TRUE)
+test <- subset(tweets, spl == FALSE)
+
+anyNA(tweets) # check for NA entries which might have to be omitted
+```
+
+### Training the Model
+
+Before we train our model, we’ll first implement the `trainControl()` method. This will control all the computational overheads so that we can use the `train()` function provided by the `caret` package. The training method will train our data on different algorithms.
+
+```{r}
+library(caret)
+
+svm_Linear_1 <- train(sentiment ~ .,
+                     data = train,
+                     method = "svmLinear")
+svm_Linear_1
+
+# trctrl <- trainControl(method = "repeatedcv", # 'method' defines the resampling method. "repeatedcv": repeated cross-validation
+#                        number = 10, # no. of resampling iterations
+#                        repeats = 3 # no. of sets to compute for the method chosen
+#                        )
+# 
+# # This is the full version of the model we want to try out
+# svm_Linear_full <- train(sentiment ~ .,
+#                     data = train,
+#                     method = "svmLinear",
+#                     trControl = trctrl,
+#                     preProcess = c("center", "scale"), # these help center and scale the data. After pre-processing, these convert our training data with mean value appx. 0 and s.d. appx. 1.
+#                     tuneLength = 10 # tuning for the algo
+#                     )
+
+# svm_Linear
+```
+
+### Testing the Model
+
+```{r}
+test_pred_1 <- predict(svm_Linear_1, newdata = test)
+confusionMatrix(table(test_pred_1, test$sentiment))
+```
+
