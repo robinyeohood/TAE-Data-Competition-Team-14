@@ -235,7 +235,7 @@ test_pred_6 <- predict(svm_Linear_6, newdata = test2) # list of predicted result
 confusionMatrix(table(test_pred_6, test2$sentiment))
 ```
 
-Testing Accuracy: 0.5317
+Testing Accuracy: 0.5317 - NO CHANGE
 
 Conclusion: k-fold cross-validation here as little effect on accuracy.
 
@@ -282,7 +282,43 @@ test_pred_7 <- predict(svm_Linear_7, newdata = test3) # list of predicted result
 confusionMatrix(table(test_pred_7, test3$sentiment))
 ```
 
-Testing Accuracy:
+Testing Accuracy: 0.6109
+
+## Model 8
+
+Modify Model 6 to test SVM with polynomial kernel (`method = 'svmPoly'`). Remove `trctrl`. Use 0.03 sparsity (`tweets2`).
+
+### Training Model 8
+
+```{r}
+library(caret)
+set.seed(1)
+svm_Linear_8 <- train(sentiment ~ .,
+                     data = train2,
+                     method = "svmPoly",
+                     preProcess = c("center", "scale"))
+svm_Linear_8
+```
+
+```{r}
+svm_Linear_8$results$Accuracy
+```
+
+![](svm_poly_8_acc.png)
+
+### Testing Model 8
+
+```{r}
+test_pred_8 <- predict(svm_Linear_8, newdata = test2) # list of predicted results
+# Check accuracy of results
+confusionMatrix(table(test_pred_8, test2$sentiment))
+```
+
+Test Accuracy: 0.5325
+
+## Model 8 Conclusion
+
+`method = 'svmPoly'` shows a small improvement in test accuracy (compared to Model 4's test accuracy of 0.5317.
 
 ## Model ULTIMATE
 
